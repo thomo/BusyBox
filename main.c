@@ -28,13 +28,30 @@
 // C6,C7  led bar
 // C1-C5  led circle
 
+int tick_count;
+void __interrupt(high_priority) tcInt(void)
+{
+    if (TMR0IE && TMR0IF) {  // any timer 0 interrupts?
+        TMR0IF=0;
+        ++tick_count;
+    }
+    if (TMR1IE && TMR1IF) {  // any timer 1 interrupts?
+        TMR1IF=0;
+        tick_count += 100;
+    }
+    // process other interrupt sources here, if required
+    return;
+}
+
 void startAnalogRead(unsigned char input) {
     ADCON0bits.CHS = input;
     ADCON0bits.GO = 1;
 }
 
 unsigned char getAnalogValue(){
-    while (ADCON0bits.GO != 0);
+    while(ADCON0bits.GO) {
+        /* wait */
+    }
     
     return ADRESH;
 }
