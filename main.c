@@ -17,24 +17,63 @@
 
 # define TRUE 1 
 
+// INPUT
+// A0 analog
+// A1 analog
+// A4,A5 direction
+
 // OUTPUT
-// PORTA (2,3)
-// PORTB
-// PORTC (but not RC0)
+// A2, A3 blink
+// B0-B7  led bar
+// C6,C7  led bar
+// C1-C5  led circle
+
+void startAnalogRead(unsigned char input) {
+    ADCON0bits.CHS = input;
+    ADCON0bits.GO = 1;
+}
+
+unsigned char getAnalogValue(){
+    while (ADCON0bits.GO != 0);
+    
+    return ADRESH;
+}
 
 void main(){
+    unsigned char analogInput = 0;
+    
+    unsigned char av[2];
+    
+    av[0] = 0x00;
+    av[1] = 0x00;
+    
     TRISA = 0b00110011;
     TRISB = 0x00;
     TRISC = 0b00000001;
+    CMCON = 0x03;              // Comperator off, Analog input
+    
+    ADCON0bits.ADON  = 1;      // ADC on
+
+    ADCON0bits.ADCS  = 0;      // Fosc/4
+    ADCON1bits.ADCS2 = 1;
+    
+    ADCON1bits.ADFM  = 0;
+    
+    ADCON1bits.PCFG  = 0;      // analog input
     
     while (TRUE){
-        PORTA = 0x00;          // all off
-        PORTB = 0x00;          // all off
-        PORTC = 0x00;          // all off
-        __delay_ms(1000);      // Wait 1 sec.
-        PORTA = 0xff;          // all on
-        PORTB = 0xff;          // all on
-        PORTC = 0xff;          // all on
-        __delay_ms(1000);      // Wait 1 sec.          
+        
+        startAnalogRead(analogInput);
+        
+        PORTA = 0x55;          // all off
+        __delay_ms(100);      // Wait 1 sec.
+
+        av[analogInput] = getAnalogValue();
+        analogInput = (analogInput + 1) & 0x01;
+
+        PORTA = 0xaa;          // all on
+        PORTB = av[0];          // all on
+        PORTC = av[1];          // all on
+        __delay_ms(100);      // Wait 1 sec.      
     }
 }
