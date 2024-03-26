@@ -19,7 +19,9 @@
 
 #define LSB(a)  *((unsigned char *)&a)
 #define MSB(a)  *(((unsigned char *)&a) + 1)
-
+#define  testbit(var, bit)   ((var) & (1 <<(bit)))
+#define  setbit(var, bit)    ((var) |= (1 << (bit)))
+#define  clrbit(var, bit)    ((var) &= ~(1 << (bit)))
 
 // INPUT
 // A0 analog
@@ -32,38 +34,38 @@
 // C6,C7  led bar
 // C1-C5  led circle
 
-unsigned int ledBar = 0x0001;
-unsigned char ledRing = 0x01;
+unsigned int ledBar = 0x0003;
+unsigned char ledRing = 0x03;
 unsigned char ledBlink = 0x01;
 
-int tick_count;
-
-void __interrupt(high_priority) tcInt(void)
-{
-    if (TMR0IE && TMR0IF) {  // any timer 0 interrupts?
-        TMR0IF=0;
-        ++tick_count;
-    }
-    if (TMR1IE && TMR1IF) {  // any timer 1 interrupts?
-        TMR1IF=0;
-        tick_count += 100;
-    }
-    // process other interrupt sources here, if required
-    return;
-}
-
-void startAnalogRead(unsigned char input) {
-    ADCON0bits.CHS = input;
-    ADCON0bits.GO = 1;
-}
-
-unsigned char getAnalogValue() {
-    while(ADCON0bits.GO) {
-        /* wait */
-    }
-    
-    return ADRESH;
-}
+//int tick_count;
+//
+//void __interrupt(high_priority) tcInt(void)
+//{
+//    if (TMR0IE && TMR0IF) {  // any timer 0 interrupts?
+//        TMR0IF=0;
+//        ++tick_count;
+//    }
+//    if (TMR1IE && TMR1IF) {  // any timer 1 interrupts?
+//        TMR1IF=0;
+//        tick_count += 100;
+//    }
+//    // process other interrupt sources here, if required
+//    return;
+//}
+//
+//void startAnalogRead(unsigned char input) {
+//    ADCON0bits.CHS = input;
+//    ADCON0bits.GO = 1;
+//}
+//
+//unsigned char getAnalogValue() {
+//    while(ADCON0bits.GO) {
+//        /* wait */
+//    }
+//    
+//    return ADRESH;
+//}
 
 void rotateBar(unsigned char dir) {
     if ((dir & 0x01) == 0) {
@@ -71,13 +73,15 @@ void rotateBar(unsigned char dir) {
         if (testbit(ledBar, 10)) {
             ledBar = ledBar | 0x0001;
         }
+        ledBar = ledBar & 0x03FF;
     } else {
-        ledBar = ledBar >> 1;
-        if (testbit(ledBar, 15)) {
+        if (testbit(ledBar, 0)) {
+            ledBar = ledBar >> 1;
             ledBar = ledBar | 0x0200;
+        } else {
+            ledBar = ledBar >> 1;
         }
     }
-    ledBar = ledBar & 0x03FF;
 }
 
 void rotateRing(unsigned char dir) {
@@ -86,13 +90,15 @@ void rotateRing(unsigned char dir) {
         if (testbit(ledRing, 5)) {
             ledRing = ledRing | 0x01;
         }
+        ledRing = ledRing & 0x1F;
     } else {
-        ledRing = ledRing >> 1;
-        if (testbit(ledBar, 7)) {
+        if (testbit(ledRing, 0)) {
+            ledRing = ledRing >> 1;
             ledRing = ledRing | 0x10;
+        } else {
+            ledRing = ledRing >> 1;
         }
     }
-    ledRing = ledRing & 0x1F;
 }
 
 void blink() {
@@ -102,14 +108,14 @@ void blink() {
 void updateOutputs() {
     // A2, A3 blink
     // B7-B0  led bar
-    PORTB = LSB(ledBar);
+    PORTB = LSB(ledBar) ^ 0xFF;
     
     // C7,C6  led bar
     unsigned char tempC = MSB(ledBar)<<6;
 
     // C5-C1  led circle
     tempC = tempC | (ledRing << 1);
-    PORTC = tempC;
+    PORTC = tempC ^ 0xFF;
 }
 
 void main() {
@@ -142,8 +148,8 @@ void main() {
 
         __delay_ms(500);      
 
-        rotateBar(0);
-        rotateRing(0);
+        rotateBar(1);
+        rotateRing(1);
         blink();
 
         updateOutputs();
