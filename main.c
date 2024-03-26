@@ -15,7 +15,11 @@
 
 #define _XTAL_FREQ 7372800     // Oscillator frequency (8 MHz)
 
-# define TRUE 1 
+#define TRUE 1 
+
+#define LSB(a)  *((unsigned char *)&a)
+#define MSB(a)  *(((unsigned char *)&a) + 1)
+
 
 // INPUT
 // A0 analog
@@ -28,7 +32,12 @@
 // C6,C7  led bar
 // C1-C5  led circle
 
+unsigned int ledBar = 0x0001;
+unsigned char ledRing = 0x01;
+unsigned char ledBlink = 0x01;
+
 int tick_count;
+
 void __interrupt(high_priority) tcInt(void)
 {
     if (TMR0IE && TMR0IF) {  // any timer 0 interrupts?
@@ -48,7 +57,7 @@ void startAnalogRead(unsigned char input) {
     ADCON0bits.GO = 1;
 }
 
-unsigned char getAnalogValue(){
+unsigned char getAnalogValue() {
     while(ADCON0bits.GO) {
         /* wait */
     }
@@ -56,7 +65,54 @@ unsigned char getAnalogValue(){
     return ADRESH;
 }
 
-void main(){
+void rotateBar(unsigned char dir) {
+    if ((dir & 0x01) == 0) {
+        ledBar = ledBar << 1;
+        if (testbit(ledBar, 10)) {
+            ledBar = ledBar | 0x0001;
+        }
+    } else {
+        ledBar = ledBar >> 1;
+        if (testbit(ledBar, 15)) {
+            ledBar = ledBar | 0x0200;
+        }
+    }
+    ledBar = ledBar & 0x03FF;
+}
+
+void rotateRing(unsigned char dir) {
+    if ((dir & 0x01) == 0) {
+        ledRing = ledRing << 1;
+        if (testbit(ledRing, 5)) {
+            ledRing = ledRing | 0x01;
+        }
+    } else {
+        ledRing = ledRing >> 1;
+        if (testbit(ledBar, 7)) {
+            ledRing = ledRing | 0x10;
+        }
+    }
+    ledRing = ledRing & 0x1F;
+}
+
+void blink() {
+
+}
+
+void updateOutputs() {
+    // A2, A3 blink
+    // B7-B0  led bar
+    PORTB = LSB(ledBar);
+    
+    // C7,C6  led bar
+    unsigned char tempC = MSB(ledBar)<<6;
+
+    // C5-C1  led circle
+    tempC = tempC | (ledRing << 1);
+    PORTC = tempC;
+}
+
+void main() {
     unsigned char analogInput = 0;
     
     unsigned char av[2];
@@ -80,17 +136,16 @@ void main(){
     
     while (TRUE){
         
-        startAnalogRead(analogInput);
-        
-        PORTA = 0x55;          // all off
-        __delay_ms(100);      // Wait 1 sec.
+//        startAnalogRead(analogInput);
+//        av[analogInput] = getAnalogValue();
+//        analogInput = (analogInput + 1) & 0x01;
 
-        av[analogInput] = getAnalogValue();
-        analogInput = (analogInput + 1) & 0x01;
+        __delay_ms(500);      
 
-        PORTA = 0xaa;          // all on
-        PORTB = av[0];          // all on
-        PORTC = av[1];          // all on
-        __delay_ms(100);      // Wait 1 sec.      
+        rotateBar(0);
+        rotateRing(0);
+        blink();
+
+        updateOutputs();
     }
 }
