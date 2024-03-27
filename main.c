@@ -34,6 +34,13 @@
 // C6,C7  led bar
 // C1-C5  led circle
 
+unsigned char barMode = 0;
+unsigned char barSubMode = 0;
+unsigned char ringMode = 0;
+unsigned char ringSubMode = 0;
+unsigned char blinkMode = 0;
+unsigned char blinkSubMode = 0;
+
 unsigned int ledBar = 0x0003;
 unsigned char ledRing = 0x03;
 unsigned char ledBlink = 0x01;
@@ -101,8 +108,41 @@ void rotateRing(unsigned char dir) {
     }
 }
 
-void blink() {
+void blinkSame() {
+    // TODO
+}
 
+void blinkAlternating() {
+    // TODO
+}
+
+void increaseMode() {
+    
+}
+
+void decreaseMode() {
+
+}
+
+void updateLedBar() {
+    switch(barMode) {
+        case 0: rotateBar(0); 
+        case 1: rotateBar(1); 
+    }
+}
+
+void updateLedRing() {
+    switch(ringMode) {
+        case 0: rotateRing(0); 
+        case 1: rotateRing(1); 
+    }
+}
+
+void updateBlink() {
+    switch(ledBlinkMode) {
+        case 0: blinkSame(); 
+        case 1: blinkAlternating(); 
+    }
 }
 
 void updateOutputs() {
@@ -148,10 +188,10 @@ void main() {
 
         __delay_ms(500);      
 
-        rotateBar(1);
-        rotateRing(1);
-        blink();
-
+        updateLedBar();
+        updateLedRing();
+        updateBlink();
+        
         updateOutputs();
     }
 }
