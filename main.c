@@ -105,12 +105,11 @@ static const BarMode barModes[] = {
     { FUN_BAR_COUNT_DOWN,   0b0000001111111111 },
 };
 
+unsigned char numBarModes = sizeof(barModes) / sizeof(barModes[0]);
 unsigned char barMode = 0;
-unsigned char barSubMode = 0;
+
 unsigned char ringMode = 0;
-unsigned char ringSubMode = 0;
 unsigned char blinkMode = 0;
-unsigned char blinkSubMode = 0;
 
 unsigned int ledBar = 0x0003;
 unsigned char ledRing = 0x03;
@@ -188,7 +187,14 @@ void blinkAlternating() {
 }
 
 void increaseMode() {
-    
+    barMode += 1;
+    if (barMode == numBarModes) barMode = 0;
+
+    ringMode += 1;
+    if (ringMode == numRingModes) ringMode = 0;
+
+    blinkMode += 1;
+    if (blinkMode == numBlinkModes) blinkMode = 0;
 }
 
 void decreaseMode() {
