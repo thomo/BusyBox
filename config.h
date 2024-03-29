@@ -11,4 +11,6 @@
 #pragma config DEBUG = OFF // In-Circuit Debugger Mode bit (In-Circuit Debugger disabled, RB6 and RB7 are general purpose I/O pins)
 #pragma config CP = OFF    // Flash Program Memory Code Protection bit (Code protection off)
 
+#define _XTAL_FREQ 7372800     // Oscillator frequency (8 MHz)
+
 #endif
