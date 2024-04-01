@@ -9,6 +9,7 @@
       <itemPath>macro.h</itemPath>
       <itemPath>ledring.h</itemPath>
       <itemPath>ledblink.h</itemPath>
+      <itemPath>rotary.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -26,6 +27,7 @@
       <itemPath>ledbar.c</itemPath>
       <itemPath>ledring.c</itemPath>
       <itemPath>ledblink.c</itemPath>
+      <itemPath>rotary.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <projectmakefile>Makefile</projectmakefile>

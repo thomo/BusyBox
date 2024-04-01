@@ -1,7 +1,7 @@
 #ifndef LEDBAR_H
 #define	LEDBAR_H
 
-unsigned int barValue = 0x0003;
+unsigned int barValue = 0x0001;
 
 void nextBarMode(void);
 void prevBarMode(void);

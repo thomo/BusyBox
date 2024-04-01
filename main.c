@@ -8,22 +8,27 @@
 #include "ledbar.h"
 #include "ledring.h"
 #include "ledblink.h"
+#include "rotary.h"
 
-//int tick_count;
-//
-//void __interrupt(high_priority) tcInt(void)
-//{
-//    if (TMR0IE && TMR0IF) {  // any timer 0 interrupts?
-//        TMR0IF=0;
-//        ++tick_count;
-//    }
-//    if (TMR1IE && TMR1IF) {  // any timer 1 interrupts?
-//        TMR1IF=0;
-//        tick_count += 100;
-//    }
-//    // process other interrupt sources here, if required
-//    return;
-//}
+#define TMR0_PRESET 26
+
+int tick_count;
+
+void __interrupt() ir(void)
+{
+    PORTCbits.RC0 = 1;
+    // Timer0 Interrupt - Freq = 1001.74 Hz - Period = 0.000998 seconds
+    if (TMR0IE && TMR0IF) {
+      TMR0IF = 0;    // clear the flag
+      TMR0 = TMR0_PRESET;   // reset the timer preset count
+      
+      // A5,A4 rotary encoder
+      // 00110000
+      rotaryEncoderTick((unsigned char)(PORTA & 0b00110000) >> 4);
+    }
+    PORTCbits.RC0 = 0;
+    return;
+}
 //
 //void startAnalogRead(unsigned char input) {
 //    ADCON0bits.CHS = input;
@@ -65,7 +70,7 @@ void updateOutputs() {
     unsigned char tempC;
     
     // A3, A2 blink
-    PORTA = (unsigned char) (blinkValue << 2 & 0x06) ^ 0x06;
+    PORTA = (unsigned char) (blinkValue << 2 & 0b00001100) ^ 0b00001100;
     
     // B7-B0  led bar
     // C7,C6  led bar
@@ -78,19 +83,42 @@ void updateOutputs() {
 }
 
 void init() {
-    TRISA = 0b00110011;
-    TRISB = 0x00;
-    TRISC = 0b00000001;
-    CMCON = 0x03;              // Comperator off, Analog input
+    TRISA = 0b00110011;         // A5,A4 digital input 
+                                // A3,A2 digital output
+                                // A1,A0 analog input
+    TRISB = 0x00;               // B7-B0 output
+    TRISC = 0b00000000;         // C7-C1 output
+                                // C0 output (debug)
     
-    ADCON0bits.ADON  = 1;      // ADC on
+    CMCON = 0x03;               // Comperator off, Analog input
+    
+    ADCON0bits.ADON  = 1;       // ADC on
 
-    ADCON0bits.ADCS  = 0;      // Fosc/4
+    ADCON0bits.ADCS  = 0;       // Fosc/4
     ADCON1bits.ADCS2 = 1;
     
     ADCON1bits.ADFM  = 0;
     
-    ADCON1bits.PCFG  = 0;      // analog input
+    ADCON1bits.PCFG  = 0x06;    // analog input
+    
+    
+    // Timer0 Registers Prescaler= 8 - TMR0 Preset = 26 - Freq = 1001.74 Hz - Period = 0.000998 seconds
+    OPTION_REGbits.T0CS = 0;  // bit 5  TMR0 Clock Source Select bit...0 = Internal Clock (CLKO) 1 = Transition on T0CKI pin
+    OPTION_REGbits.T0SE = 0;  // bit 4 TMR0 Source Edge Select bit 0 = low/high 1 = high/low
+    OPTION_REGbits.PSA = 0;   // bit 3  Prescaler Assignment bit...0 = Prescaler is assigned to the Timer0
+    
+    OPTION_REGbits.PS2 = 0;   // bits 2-0  PS2:PS0: Prescaler Rate Select bits
+    OPTION_REGbits.PS1 = 1;
+    OPTION_REGbits.PS0 = 0;
+    TMR0 = TMR0_PRESET;       // preset for timer register
+
+    // Interrupt Registers
+    INTCON = 0;               // clear the interrpt control register
+    INTCONbits.TMR0IE = 1;    // bit5 TMR0 Overflow Interrupt Enable bit...1 = Enables the TMR0 interrupt
+    INTCONbits.TMR0IF = 0;    // bit2 clear timer 0 interrupt flag
+    INTCONbits.GIE = 1;       // bit7 global interrupt enable
+    
+    rotaryMode = ROTARY_MODE_FOUR3;
 }
 
 void main() {
@@ -102,6 +130,9 @@ void main() {
     av[0] = 0x00;
     av[1] = 0x00;
     
+    unsigned char currentPos = rotaryEncoderPos;
+    unsigned char prevRotEncPos = currentPos;
+    
     while (TRUE){
         
 //        startAnalogRead(analogInput);
@@ -110,6 +141,16 @@ void main() {
 
         __delay_ms(100);      
 
+        currentPos = rotaryEncoderPos;
+        
+        if (prevRotEncPos < currentPos) {
+            nextMode();
+            prevRotEncPos = currentPos;
+        } else if (prevRotEncPos > currentPos) {
+            prevMode();
+            prevRotEncPos = currentPos;
+        }
+        
         updateBarValue();
         updateRingValue();
         updateBlinkValue();

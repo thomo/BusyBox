@@ -1,10 +1,3 @@
-/* 
- * File:   macro.h
- * Author: Gisela
- *
- * Created on 29. März 2024, 12:40
- */
-
 #ifndef MACRO_H
 #define	MACRO_H
 
@@ -15,6 +8,15 @@
 #define clrbit(var, bit)    ((var) &= ~(1 << (bit)))
 
 #define TRUE 1 
+
+#define FUN_MODE_ON 1
+#define FUN_MODE_OFF 0
+#define FUN_MODE_LEFT 0
+#define FUN_MODE_RIGHT 1
+#define FUN_MODE_IN 0
+#define FUN_MODE_OUT 1
+#define FUN_MODE_UP 1
+#define FUN_MODE_DOWN 0
 
 #endif	/* MACRO_H */
 

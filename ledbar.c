@@ -77,15 +77,19 @@ unsigned char numBarModes = sizeof(barModes) / sizeof(barModes[0]);
 unsigned char barMode = 0;
 
 void nextBarMode() {
-    barMode += 1;
+    ++barMode;
     if (barMode == numBarModes) barMode = 0;
+    
+    barValue = barModes[barMode].init;
 }
 
 void prevBarMode() {
     if (barMode == 0) 
         barMode = numBarModes; 
     else 
-        barMode -= barMode;
+        --barMode;
+    
+    barValue = barModes[barMode].init;
 }
 
 void rotateBar(unsigned char dir) {
@@ -105,10 +109,35 @@ void rotateBar(unsigned char dir) {
     }
 }
 
+void bounceBar(unsigned char mode) {
+} 
+
+void centerBar(unsigned char dir) {
+}
+
+void blinkBar(){
+}
+
+void countBar(unsigned char funMode) {
+    if (funMode == FUN_MODE_UP) {
+        ++barValue;
+    } else {
+        --barValue;
+    } 
+}
+
 void updateBarValue() {
-    switch(barMode) {
-        case 0: rotateBar(0); 
-        case 1: rotateBar(1); 
+    BarFunId funId = barModes[barMode].funId;
+    switch(funId) {
+        case FUN_BAR_ROTATE_LEFT: rotateBar(FUN_MODE_LEFT);break;
+        case FUN_BAR_ROTATE_RIGHT: rotateBar(FUN_MODE_RIGHT);break;  
+        case FUN_BAR_BOUNCE_ON: bounceBar(FUN_MODE_ON);break;
+        case FUN_BAR_BOUNCE_OFF: bounceBar(FUN_MODE_OFF);break;
+        case FUN_BAR_CENTER_OUT: centerBar(FUN_MODE_OUT);break;
+        case FUN_BAR_CENTER_IN: centerBar(FUN_MODE_IN);break;
+        case FUN_BAR_BLINK: blinkBar();break;
+        case FUN_BAR_COUNT_UP: countBar(FUN_MODE_UP);break;
+        case FUN_BAR_COUNT_DOWN: countBar(FUN_MODE_DOWN);break;
     }
 }
 
