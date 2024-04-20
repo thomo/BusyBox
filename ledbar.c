@@ -1,7 +1,9 @@
 #include "ledbar.h"
 #include "macro.h"
+#include "random.h"
 
 typedef enum {
+    FUN_BAR_RANDOM,
     FUN_BAR_ROTATE_LEFT,
     FUN_BAR_ROTATE_RIGHT,
     FUN_BAR_BOUNCE_ON,
@@ -20,6 +22,7 @@ typedef struct {
 
 static const BarMode barModes[] = { 
     //                        s     0987654321
+    { FUN_BAR_RANDOM,       0b0000000000000001 },
     { FUN_BAR_ROTATE_LEFT,  0b0000000000000001 },
     { FUN_BAR_ROTATE_LEFT,  0b0000000000000011 },
     { FUN_BAR_ROTATE_LEFT,  0b0000000000000111 },
@@ -29,7 +32,6 @@ static const BarMode barModes[] = {
     { FUN_BAR_ROTATE_LEFT,  0b0000000001111111 },
     { FUN_BAR_ROTATE_LEFT,  0b0000000011111111 },
     { FUN_BAR_ROTATE_LEFT,  0b0000000111111111 },
-    { FUN_BAR_ROTATE_LEFT,  0b0000001111111111 },
     { FUN_BAR_ROTATE_RIGHT, 0b0000001111111110 },
     { FUN_BAR_ROTATE_RIGHT, 0b0000001111111100 },
     { FUN_BAR_ROTATE_RIGHT, 0b0000001111111000 },
@@ -48,7 +50,6 @@ static const BarMode barModes[] = {
     { FUN_BAR_BOUNCE_ON,    0b0000001111111000 },
     { FUN_BAR_BOUNCE_ON,    0b0000001111111100 },
     { FUN_BAR_BOUNCE_ON,    0b0000001111111110 },
-    { FUN_BAR_BOUNCE_ON,    0b0000001111111111 },
     { FUN_BAR_BOUNCE_OFF,   0b1000001111111110 },
     { FUN_BAR_BOUNCE_OFF,   0b1000001111111100 },
     { FUN_BAR_BOUNCE_OFF,   0b1000001111111000 },
@@ -57,12 +58,11 @@ static const BarMode barModes[] = {
     { FUN_BAR_BOUNCE_OFF,   0b1000001111000000 },
     { FUN_BAR_BOUNCE_OFF,   0b1000001110000000 },
     { FUN_BAR_BOUNCE_OFF,   0b1000001100000000 },
-    { FUN_BAR_BOUNCE_OFF,   0b1000001000000000},
+    { FUN_BAR_BOUNCE_OFF,   0b1000001000000000 },
     { FUN_BAR_CENTER_OUT,   0b0000000000110000 },
     { FUN_BAR_CENTER_OUT,   0b0000000001111000 },
     { FUN_BAR_CENTER_OUT,   0b0000000011111100 },
     { FUN_BAR_CENTER_OUT,   0b0000000111111110 },
-    { FUN_BAR_CENTER_OUT,   0b0000001111111111 },
     { FUN_BAR_CENTER_IN ,   0b0000000111111110 },
     { FUN_BAR_CENTER_IN,    0b0000000011111100 },
     { FUN_BAR_CENTER_IN,    0b0000000001111000 },
@@ -151,12 +151,26 @@ void bounceBar(unsigned char mode) {
 } 
 
 void centerBar(unsigned char dir) {
+    // 0000 0054 3211 2345
+    //              ......
+    // take maked bits and calculate next value
+    // then copy state to upper bits
+    barTemp = LSB(barValue);
     if (dir == FUN_MODE_OUT) {
-        barTemp = ((unsigned char)(MSB(barValue) << 3)) | ((LSB(barValue) & 0xE0) >> 5);
-        barTemp = (unsigned char) (barTemp << 1);
-        if (testbit(barTemp,5)) barTemp |= 0x01;
-            
+        barTemp &= 0x1f;
+        if (testbit(barTemp,0)) setbit(barTemp,5);
+        barTemp = barTemp >> 1;
+    } else {
+        barTemp = ((unsigned char)(barTemp << 1));
+        if (testbit(barTemp,5)) setbit(barTemp,0);
+        barTemp &= 0x1f;
     }
+    barValue = barTemp;
+    if (testbit(barTemp,0)) setbit(barValue,9);
+    if (testbit(barTemp,1)) setbit(barValue,8);
+    if (testbit(barTemp,2)) setbit(barValue,7);
+    if (testbit(barTemp,3)) setbit(barValue,6);
+    if (testbit(barTemp,4)) setbit(barValue,5);
 }
 
 void blinkBar(){
@@ -171,9 +185,14 @@ void countBar(unsigned char funMode) {
     } 
 }
 
+void randomBar() {
+    barValue = nextRandom();
+}
+
 void updateBarValue() {
     BarFunId funId = barModes[barMode].funId;
     switch(funId) {
+        case FUN_BAR_RANDOM: randomBar();break;
         case FUN_BAR_ROTATE_LEFT: rotateBar(FUN_MODE_LEFT);break;
         case FUN_BAR_ROTATE_RIGHT: rotateBar(FUN_MODE_RIGHT);break;  
         case FUN_BAR_BOUNCE_ON: bounceBar(FUN_MODE_ON);break;
@@ -182,7 +201,7 @@ void updateBarValue() {
         case FUN_BAR_CENTER_IN: centerBar(FUN_MODE_IN);break;
         case FUN_BAR_BLINK: blinkBar();break;
         case FUN_BAR_COUNT_UP: countBar(FUN_MODE_UP);break;
-        case FUN_BAR_COUNT_DOWN: countBar(FUN_MODE_DOWN);break;
+        case FUN_BAR_COUNT_DOWN: countBar(FUN_MODE_DOWN);break;        
     }
 }
 

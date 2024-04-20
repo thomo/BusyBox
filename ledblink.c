@@ -1,7 +1,9 @@
 #include "ledblink.h"
 #include "macro.h"
+#include "random.h"
 
 typedef enum {
+    FUN_BLINK_RANDOM,
     FUN_BLINK
 } BlinkFunId;
 
@@ -11,7 +13,7 @@ typedef struct {
 } BlinkMode;
 
 static const BlinkMode blinkModes[] = { 
-                                 
+    { FUN_BLINK_RANDOM,  0b00000000 }, // same
     { FUN_BLINK,  0b00000000 }, // same
     { FUN_BLINK,  0b00000001 }  // alternate
 };
@@ -44,9 +46,14 @@ void blink() {
     blinkValue ^= 0xFF;
 }
 
+void randomBlink() {
+    blinkValue = nextRandom8();
+}
+
 void updateBlinkValue() {
     BlinkFunId funId = blinkModes[blinkMode].funId;
     switch(funId) {
+        case FUN_BLINK_RANDOM: randomBlink(); break;
         case FUN_BLINK: blink(); break;
     }
 }

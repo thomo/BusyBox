@@ -3,10 +3,10 @@
 #include "macro.h"
 
 void nextAnalogChannel() {
-    if (testbit(ADCON0, ADCON0bits.CHS0)) {
-        clrbit(ADCON0, ADCON0bits.CHS0);
+    if (testbit(ADCON0, _ADCON0_CHS0_POSITION)) {
+        ADCON0bits.CHS0 = 0;
     } else {
-        setbit(ADCON0, ADCON0bits.CHS0);
+        ADCON0bits.CHS0 = 1;
     }
 }
 
@@ -15,7 +15,7 @@ void startAnalogConversion() {
 }
 
 void readAnalogChannel(){
-    if (testbit(ADCON0, ADCON0bits.CHS0)) {
+    if (testbit(ADCON0, _ADCON0_CHS0_POSITION)) {
         poti[1] = ADRESH;
     } else {
         poti[0] = ADRESH;

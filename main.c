@@ -35,6 +35,7 @@ int tick_count;
 
 void __interrupt() ir(void)
 {
+    // http://eng-serve.com/pic/pic_timer.html
     // Timer0 Interrupt - Freq = 6063.16 Hz - Period = 0.000165 seconds
     if (TMR0IE && TMR0IF) {
       TMR0IF = 0;    // clear the flag
@@ -152,7 +153,7 @@ void main() {
 
         __delay_ms(1);      
 
-        delayEnd = delayPreset[poti[0]]; 
+        delayEnd = delayPreset[poti[1]]; 
         
         currentPos = rotaryEncoderPos;
 

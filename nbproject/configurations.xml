@@ -11,6 +11,7 @@
       <itemPath>ledblink.h</itemPath>
       <itemPath>rotary.h</itemPath>
       <itemPath>analog.h</itemPath>
+      <itemPath>random.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -30,6 +31,7 @@
       <itemPath>ledblink.c</itemPath>
       <itemPath>rotary.c</itemPath>
       <itemPath>analog.c</itemPath>
+      <itemPath>random.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <projectmakefile>Makefile</projectmakefile>
