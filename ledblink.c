@@ -20,20 +20,24 @@ unsigned char numBlinkModes = sizeof(blinkModes) / sizeof(blinkModes[0]);
 
 unsigned char blinkMode = 0;
 
-void nextBlinkMode() {
-    ++blinkMode;
-    if (blinkMode == numBlinkModes) blinkMode = 0;
-    
+void initNewBlinkMode() {
     blinkValue = blinkModes[blinkMode].init;
+}
+
+void nextBlinkMode() {
+    blinkMode += 1;
+    if (blinkMode >= numBlinkModes) blinkMode = 0;
+    
+    initNewBlinkMode();
 }
 
 void prevBlinkMode() {
     if (blinkMode == 0) 
         blinkMode = numBlinkModes; 
-    else 
-        --blinkMode;
+    
+    blinkMode -= 1;
 
-    blinkValue = blinkModes[blinkMode].init;
+    initNewBlinkMode();
 }
 
 void blink() {

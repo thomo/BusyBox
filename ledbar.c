@@ -19,7 +19,7 @@ typedef struct {
 } BarMode;
 
 static const BarMode barModes[] = { 
-    //                              0987654321
+    //                        s     0987654321
     { FUN_BAR_ROTATE_LEFT,  0b0000000000000001 },
     { FUN_BAR_ROTATE_LEFT,  0b0000000000000011 },
     { FUN_BAR_ROTATE_LEFT,  0b0000000000000111 },
@@ -47,17 +47,17 @@ static const BarMode barModes[] = {
     { FUN_BAR_BOUNCE_ON,    0b0000001111110000 },
     { FUN_BAR_BOUNCE_ON,    0b0000001111111000 },
     { FUN_BAR_BOUNCE_ON,    0b0000001111111100 },
-    { FUN_BAR_BOUNCE_ON,    0b0000001111111110},
+    { FUN_BAR_BOUNCE_ON,    0b0000001111111110 },
     { FUN_BAR_BOUNCE_ON,    0b0000001111111111 },
-    { FUN_BAR_BOUNCE_OFF,   0b0000001111111110 },
-    { FUN_BAR_BOUNCE_OFF,   0b0000001111111100 },
-    { FUN_BAR_BOUNCE_OFF,   0b0000001111111000 },
-    { FUN_BAR_BOUNCE_OFF,   0b0000001111110000 },
-    { FUN_BAR_BOUNCE_OFF,   0b0000001111100000 },
-    { FUN_BAR_BOUNCE_OFF,   0b0000001111000000 },
-    { FUN_BAR_BOUNCE_OFF,   0b0000001110000000 },
-    { FUN_BAR_BOUNCE_OFF,   0b0000001100000000 },
-    { FUN_BAR_BOUNCE_OFF,   0b0000001000000000},
+    { FUN_BAR_BOUNCE_OFF,   0b1000001111111110 },
+    { FUN_BAR_BOUNCE_OFF,   0b1000001111111100 },
+    { FUN_BAR_BOUNCE_OFF,   0b1000001111111000 },
+    { FUN_BAR_BOUNCE_OFF,   0b1000001111110000 },
+    { FUN_BAR_BOUNCE_OFF,   0b1000001111100000 },
+    { FUN_BAR_BOUNCE_OFF,   0b1000001111000000 },
+    { FUN_BAR_BOUNCE_OFF,   0b1000001110000000 },
+    { FUN_BAR_BOUNCE_OFF,   0b1000001100000000 },
+    { FUN_BAR_BOUNCE_OFF,   0b1000001000000000},
     { FUN_BAR_CENTER_OUT,   0b0000000000110000 },
     { FUN_BAR_CENTER_OUT,   0b0000000001111000 },
     { FUN_BAR_CENTER_OUT,   0b0000000011111100 },
@@ -75,21 +75,26 @@ static const BarMode barModes[] = {
 unsigned char numBarModes = sizeof(barModes) / sizeof(barModes[0]);
 
 unsigned char barMode = 0;
+unsigned char barTemp = 0;
+
+void initNewBarMode() {    
+    barValue = barModes[barMode].init & 0x03FF;
+    barTemp = MSB(barModes[barMode].init) & 0x80 >> 7;
+}
 
 void nextBarMode() {
-    ++barMode;
-    if (barMode == numBarModes) barMode = 0;
-    
-    barValue = barModes[barMode].init;
+    barMode += 1;
+    if (barMode >= numBarModes) barMode = 0;
+    initNewBarMode();
 }
 
 void prevBarMode() {
     if (barMode == 0) 
         barMode = numBarModes; 
-    else 
-        --barMode;
-    
-    barValue = barModes[barMode].init;
+
+    barMode -= 1;
+   
+    initNewBarMode();
 }
 
 void rotateBar(unsigned char dir) {
@@ -101,21 +106,61 @@ void rotateBar(unsigned char dir) {
         barValue = barValue & 0x03FF;
     } else {
         if (testbit(barValue, 0)) {
-            barValue = barValue >> 1;
-            barValue = barValue | 0x0200;
-        } else {
-            barValue = barValue >> 1;
-        }
+            barValue = barValue | 0x0400;
+        } 
+        barValue = barValue >> 1;
     }
 }
 
 void bounceBar(unsigned char mode) {
+    if (mode == FUN_MODE_ON) {
+        // move "1"
+        if (barTemp == FUN_MODE_RIGHT) {
+            if (testbit(barValue, 0)) {
+                barTemp = FUN_MODE_LEFT;
+                barValue = barValue << 1;
+            } else {
+                barValue = barValue >> 1;
+            }
+        } else {
+            if (testbit(barValue, 9)) {
+                barTemp = FUN_MODE_RIGHT;
+                barValue = barValue >> 1;
+            } else {
+                barValue = barValue << 1;
+            }
+        }
+    } else {
+        // move "0"
+        if (barTemp == FUN_MODE_RIGHT) {
+            if (!testbit(barValue, 0)) {
+                barTemp = FUN_MODE_LEFT;
+                barValue = barValue << 1 | 0x0001;
+            } else {
+                barValue = barValue >> 1 | 0x0200;
+            }
+        } else {
+            if (!testbit(barValue, 9)) {
+                barTemp = FUN_MODE_RIGHT;
+                barValue = barValue >> 1 | 0x0200;
+            } else {
+                barValue = barValue << 1 | 0x0001;
+            }
+        }
+    }
 } 
 
 void centerBar(unsigned char dir) {
+    if (dir == FUN_MODE_OUT) {
+        barTemp = ((unsigned char)(MSB(barValue) << 3)) | ((LSB(barValue) & 0xE0) >> 5);
+        barTemp = (unsigned char) (barTemp << 1);
+        if (testbit(barTemp,5)) barTemp |= 0x01;
+            
+    }
 }
 
 void blinkBar(){
+    barValue ^= 0xFFFF;
 }
 
 void countBar(unsigned char funMode) {

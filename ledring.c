@@ -52,20 +52,23 @@ unsigned char numRingModes = sizeof(ringModes) / sizeof(ringModes[0]);
 
 unsigned char ringMode = 0;
 
-void nextRingMode() {
-    ++ringMode;
-    if (ringMode == numRingModes) ringMode = 0;
-    
+void initNewRingMode() {
     ringValue = ringModes[ringMode].init;
+}
+
+void nextRingMode() {
+    ringMode += 1;
+    if (ringMode >= numRingModes) ringMode = 0;
+    
+    initNewRingMode();
 }
 
 void prevRingMode() {
     if (ringMode == 0) 
         ringMode = numRingModes; 
-    else 
-        --ringMode;
+    ringMode -= 1;
     
-    ringValue = ringModes[ringMode].init;
+    initNewRingMode();
 }
 
 void rotateRing(unsigned char dir) {

@@ -40,10 +40,15 @@
 #define ROTARY_MODE_FOUR0 1 // 4 steps, Latch at position 0 (reverse wirings)
 #define ROTARY_MODE_TWO03 2 // 2 steps, Latch at position 0 and 3
 
+#define ROTARY_POS_INIT 128
+
 volatile unsigned char rotaryMode; // Latch mode from initialization
 
 volatile unsigned char rotaryEncoderPos;
 
+volatile unsigned char rotaryEncoderPosLimits[2];
+
+void initRotaryPos(void);
 void rotaryEncoderTick(unsigned char);
 
 #endif	/* ROTARY_H */

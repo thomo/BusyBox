@@ -55,7 +55,24 @@ volatile unsigned char _rotaryOldState;
 // [3] is the positions where my rotary switch detends
 // ==> right, count up
 // <== left,  count down
-volatile unsigned char _rotaryPosition;  // Internal position (4 times rotaryEncoderPos)
+// Internal position (2 or 4 times rotaryEncoderPos)
+volatile unsigned char _rotaryPosition;  
+
+void initRotaryPos() {
+    _rotaryPosition = ROTARY_POS_INIT;
+    switch (rotaryMode) {
+        case ROTARY_MODE_FOUR3:
+        case ROTARY_MODE_FOUR0:
+            rotaryEncoderPos = (unsigned char) _rotaryPosition >> 2;
+            break;
+
+        case ROTARY_MODE_TWO03:
+            rotaryEncoderPos = (unsigned char) _rotaryPosition >> 1;
+            break;
+    }     
+    rotaryEncoderPosLimits[0] = rotaryEncoderPos >> 1;
+    rotaryEncoderPosLimits[1] = rotaryEncoderPos + rotaryEncoderPosLimits[0];
+}
 
 // call this function every some milliseconds or by using an interrupt 
 // for handling state changes of the rotary encoder.

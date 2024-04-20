@@ -3,7 +3,7 @@
 
 #define LSB(a)  *((unsigned char *)&a)
 #define MSB(a)  *(((unsigned char *)&a) + 1)
-#define testbit(var, bit)   ((var) & (1 <<(bit)))
+#define testbit(var, bit)   ((var) &  (1 << (bit)))
 #define setbit(var, bit)    ((var) |= (1 << (bit)))
 #define clrbit(var, bit)    ((var) &= ~(1 << (bit)))
 
