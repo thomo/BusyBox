@@ -145,8 +145,8 @@ void centerRing(unsigned char dir) {
         ringTemp &= 0x07;
     }
     ringValue = ringTemp;
-    if (testbit(ringTemp,0)) setbit(ringValue,3);
-    if (testbit(ringTemp,1)) setbit(ringValue,4);
+    if (testbit(ringTemp,0)) setbit(ringValue,4);
+    if (testbit(ringTemp,1)) setbit(ringValue,3);
 }
 
 void blinkRing() {

@@ -12,6 +12,7 @@
 #include "analog.h"
 
 #define TMR0_PRESET 218
+#define PWMLOOP_PRESET 150
 
 static const unsigned int delayPreset[256] = {
   10,  11,  12,  13,  14,  15,  16,  17,   18,  19,  20,  21,  22,  23,  24,  25,
@@ -31,7 +32,27 @@ static const unsigned int delayPreset[256] = {
  679, 687, 695, 704, 713, 722, 731, 740,  749, 758, 767, 776, 786, 796, 806, 816, 
  826, 836, 846, 856, 866, 877, 888, 899,  910, 921, 932, 943, 954, 966, 978, 990};
 
+static const unsigned char pwmCycle[256] = {
+ 68,  71,  74,  77,  79,  82,  85,  89,  92,  95,  98, 101, 105, 108, 112, 115,
+119, 122, 126, 130, 134, 137, 141, 145, 149, 153, 157, 160, 164, 168, 172, 176, 
+180, 184, 187, 191, 195, 198, 202, 206, 209, 212, 216, 219, 222, 225, 228, 230, 
+233, 236, 238, 240, 242, 244, 246, 248, 249, 250, 252, 252, 253, 254, 254, 255, 
+255, 255, 254, 254, 253, 253, 252, 250, 249, 248, 246, 244, 242, 240, 238, 236, 
+233, 230, 228, 225, 222, 219, 216, 212, 209, 206, 202, 199, 195, 191, 187, 184, 
+180, 176, 172, 168, 164, 161, 157, 153, 149, 145, 141, 137, 134, 130, 126, 123, 
+119, 115, 112, 108, 105, 102,  98,  95,  92,  89,  86,  82,  80,  77,  74,  71,  
+ 68,  66,  63,  61,  58,  56,  54,  51,  49,  47,  45,  43,  41,  39,  37,  36,  
+ 34,  32,  31,  29,  28,  26,  25,  23,  22,  21,  20,  18,  17,  16,  15,  14,  
+ 13,  12,  12,  11,  10,   9,   8,   8,   7,   6,   6,   5,   5,   4,   4,   3,   
+  3,   2,   2,   2,   1,   1,   1,   1,   0,   0,   0,   0,   0,   0,   0,   0,
+  0,   0,   0,   0,   0,   0,   0,   0,   0,   1,   1,   1,   1,   2,   2,   2,   
+  3,   3,   4,   4,   5,   5,   6,   6,   7,   8,   8,   9,  10,  11,  11,  12,  
+ 13,  14,  15,  16,  17,  18,  20,  21,  22,  23,  25,  26,  27,  29,  30,  32,  
+ 34,  35,  37,  39,  41,  43,  45,  47,  49,  51,  53,  56,  58,  60,  63,  66};
+
 int tick_count;
+volatile unsigned char pwmLoop;
+volatile unsigned char pwmStep;
 
 void __interrupt() ir(void)
 {
@@ -49,6 +70,14 @@ void __interrupt() ir(void)
       rotaryEncoderTick((unsigned char)(PORTA & 0b00110000) >> 4);
       
       startAnalogConversion();
+      
+      if (pwmLoop == 0) {
+        pwmStep = pwmStep + 1;
+        CCPR1L = pwmCycle[pwmStep];
+        pwmLoop = PWMLOOP_PRESET;
+      } else {
+        pwmLoop = pwmLoop - 1;
+      }
     }
     return;
 }
@@ -86,9 +115,12 @@ void updateOutputs() {
     PORTB = LSB(barValue) ^ 0xFF;
 
     // C7,C6  led bar    = barValue.MSB.1 + barValue.MSB.0
-    // C5-C1  led circle = ringValue.4..0
     tempC  = (unsigned char) (MSB(barValue) << 6);
-    tempC |= (unsigned char) (ringValue  << 1);
+    // C5-C3  led circle = ringValue.4..2
+    tempC |= ((unsigned char) (ringValue  << 1) & 0b00111000);
+    // C1-C0  led circle = ringValue.1..0
+    tempC |= (ringValue & 0b00000011);
+    
     PORTC = tempC ^ 0xFF;
 }
 
@@ -99,10 +131,10 @@ void init() {
     
     TRISA = 0b00110011;         // A5,A4 digital input 
                                 // A3,A2 digital output
-                                // A1,A0 analog input
+                                // A1 unused (input)
+                                // A0 analog input
     TRISB = 0x00;               // B7-B0 output
-    TRISC = 0b00000000;         // C7-C1 output
-                                // C0 output (debug)
+    TRISC = 0b00000000;         // C7-C0 output
     
     CMCON = 0x03;               // Comperator off, Analog input
     
@@ -115,6 +147,23 @@ void init() {
     
     ADCON1bits.PCFG  = 0x06;    // analog input
     
+    // PWM Init
+    // https://www.micro-examples.com/public/microex-navig/doc/097-pwm-calculator.html
+    // 1. Set the PWM period by writing to the PR2 register.
+    PR2 = 0xFF;
+    pwmStep = 0;
+    pwmLoop = PWMLOOP_PRESET;
+    // 2. Set the PWM duty cycle by writing to the CCPR1L register and CCP1CON<5:4> bits.
+    CCPR1L = pwmCycle[0]; 
+    CCP1CONbits.CCP1X = 0;
+    CCP1CONbits.CCP1Y = 1;
+    // 3. Make the CCP1 pin an output by clearing the TRISC<2> bit.
+    // see above
+    // 4. Set the TMR2 prescale value and enable Timer2 by writing to T2CON.
+    T2CONbits.T2CKPS = 0; // Prescaler = 1 (PWM freq. 19.53 kHz)
+    T2CONbits.TMR2ON = 1; // TMR2 enabled   
+    // 5. Configure the CCP1 module for PWM operation.
+    CCP1CONbits.CCP1M = 0x0F; // PWM Mode
     
     // Timer0 Registers Prescaler= 8 - TMR0 Preset = 26 - Freq = 1001.74 Hz - Period = 0.000998 seconds
     OPTION_REGbits.T0CS = 0;  // bit 5  TMR0 Clock Source Select bit...0 = Internal Clock (CLKO) 1 = Transition on T0CKI pin
