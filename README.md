@@ -1,6 +1,6 @@
 # BusyBox (PIC16F876a LED Controller)
 
-A versatile microcontroller-based light effects controller designed for a "BusyBox" toy or experimental board. The project uses a **PIC16F876a** to drive multiple LED arrays with interactive controls for pattern selection and speed.
+A versatile microcontroller-based light effects controller designed for a "BusyBox" toy or experimental board. The project uses a **PIC16F876a** to drive multiple LED arrays with interactive controls for pattern selection and speed, see this [video](https://youtube.com/shorts/YxFTMH3q9yA) for a demo.
 
 ![BusyBox Top View](images/BusyBox_top.jpg)
 ![BusyBox Internal Wiring](images/BusyBox_inside.jpg)
